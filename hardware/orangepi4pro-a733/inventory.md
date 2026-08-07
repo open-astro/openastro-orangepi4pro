@@ -19,13 +19,13 @@ Status: **pre-validation** — fill in as items are confirmed on real hardware.
 |------|-------|
 | Chip | AIC8800D80 combo (vendor driver in Armbian image) |
 | BT | UART HCI on ttyS1, needs userspace bring-up (`SUN60IW2_UART_BT`) |
-| AP mode | TODO: validate hostapd 2.4 GHz ch6 HT20; then test 5 GHz |
+| AP mode | **Validated 2026-08-07**: hostapd AP-ENABLED, 2.4 GHz ch6 HT20 (kernel 6.6.98-vendor-sun60iw2). 5 GHz untested. |
 
 ## To validate on hardware
 
-- [ ] Stock Armbian `Trixie_vendor_minimal` boots from SD
-- [ ] `wlan0` appears; hostapd AP comes up (SSID `OpenAstro`)
-- [ ] NAT/DHCP for AP clients works over the ethernet uplink
+- [x] OpenAstro image boots from SD (first boot resizes rootfs to full card, then sshd starts)
+- [x] `wlan0` appears; hostapd AP comes up (SSID `OpenAstro`, ch6/2.4 GHz, state=ENABLED)
+- [ ] NAT/DHCP for AP clients works over the ethernet uplink (join AP, check DHCP lease + internet)
 - [ ] USB: ZWO camera, EAF, EFW enumerate (vendor 6.6 kernel — see README caveat)
 - [ ] AlpacaBridge ConformU run (v4.4.0)
-- [ ] SD/eMMC device numbering (`lsblk`) recorded here
+- [x] SD is `mmcblk1` (root `/dev/mmcblk1p1`); ethernet is `end0`; wlan0 MAC 78:70:57:88:91:5d
