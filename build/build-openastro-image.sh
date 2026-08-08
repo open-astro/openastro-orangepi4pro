@@ -9,6 +9,10 @@
 #
 # Usage: sudo build/build-openastro-image.sh <stock-armbian.img[.xz]> [output.img.xz]
 #
+# KERNEL_DEBS=<dir>: install custom kernel .debs (linux-image/-dtb/-headers from
+# armbian-build output/debs) into the image, replacing the stock kernel. Used to
+# ship the CONFIG_HIDRAW-enabled vendor kernel needed for ZWO EAF/EFW.
+#
 # AlpacaBridge is NOT baked in — users apt-install it after flashing.
 set -euo pipefail
 
@@ -41,7 +45,7 @@ esac
 
 # Grow the image so there's room to install packages in the chroot. The unused
 # space is zeroed and xz-compressed away at the end, so the .img.xz stays small.
-truncate -s +700M "$IMG"
+truncate -s +1500M "$IMG"   # extra headroom for custom kernel debs; zeroed+compressed away at the end
 LOOP=$(losetup -fP --show "$IMG")
 parted -s "$LOOP" resizepart 1 100%
 partprobe "$LOOP" 2>/dev/null || true; sleep 1
@@ -61,6 +65,15 @@ mount -t devpts devpts "$MNT/dev/pts"
 RESOLV_LINK=$(readlink "$MNT/etc/resolv.conf" 2>/dev/null || true)
 rm -f "$MNT/etc/resolv.conf"
 cp -L /etc/resolv.conf "$MNT/etc/resolv.conf" 2>/dev/null || echo 'nameserver 8.8.8.8' > "$MNT/etc/resolv.conf"
+
+if [ -n "${KERNEL_DEBS:-}" ]; then
+    ls "$KERNEL_DEBS"/linux-image-*.deb >/dev/null 2>&1 || { echo "KERNEL_DEBS=$KERNEL_DEBS has no linux-image-*.deb" >&2; exit 1; }
+    log "Installing custom kernel debs from $KERNEL_DEBS..."
+    install -d "$MNT/opt/kernel-debs"
+    cp "$KERNEL_DEBS"/linux-{image,dtb,headers}-*.deb "$MNT/opt/kernel-debs/" 2>/dev/null || cp "$KERNEL_DEBS"/linux-{image,dtb}-*.deb "$MNT/opt/kernel-debs/"
+    chroot "$MNT" /bin/bash -c "dpkg -i /opt/kernel-debs/*.deb"
+    rm -rf "$MNT/opt/kernel-debs"
+fi
 
 install -d "$MNT/opt/openastro"
 install -m 0755 "$REPODIR/openastro/openastro-setup.sh" "$MNT/opt/openastro/"

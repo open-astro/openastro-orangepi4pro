@@ -1,6 +1,3 @@
-images/
+*.img.xz
 *.img
-*.img.gz
-*.tar.gz
-*.tar.xz
-.cache/
+images/
