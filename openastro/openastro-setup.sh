@@ -140,6 +140,19 @@ systemctl enable openastro-ap-up.service hostapd dnsmasq >/dev/null 2>&1
 log "WiFi AP configured (SSID: ${AP_SSID})."
 
 # ============================================================
+# Astro-device permissions (present from first boot, so device
+# access never depends on install order of AlpacaBridge)
+# ============================================================
+# ZWO EAF/EFW/CAA are USB HID devices; without this, /dev/hidraw* is
+# root-only until AlpacaBridge's own udev rules land AND the device is
+# replugged. Shipping the rule in the image removes that ordering trap.
+cat > /etc/udev/rules.d/70-openastro-zwo-hid.rules <<'EOF'
+# ZWO HID accessories (EAF focuser, EFW/EFWmini filter wheels, CAA rotator)
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="03c3", GROUP="users", MODE="0666"
+KERNEL=="hiddev*", ATTRS{idVendor}=="03c3", GROUP="users", MODE="0666"
+EOF
+
+# ============================================================
 # System identity (turnkey — no Armbian first-boot wizard)
 # ============================================================
 log "Setting system identity..."
