@@ -1,6 +1,6 @@
 # OpenAstro for the Orange Pi 4 Pro
 
-<img src="https://www.openastro.net/wp-content/uploads/2026/04/OpenAstro_logo.png" alt="OpenAstro logo" width="420">
+<img src="https://www.openastro.net/img/oa512.png" alt="OpenAstro logo" width="420">
 
 OpenAstro OS for the **Orange Pi 4 Pro** (Allwinner A733): an
 [Armbian](https://www.armbian.com/)-based **Debian 13 (Trixie)** minimal CLI
@@ -14,13 +14,15 @@ no internal-storage install step.
 
 | Device | SoC | Kernel | Status |
 |--------|-----|--------|--------|
-| Orange Pi 4 Pro | Allwinner A733 (sun60iw2) | Armbian vendor 6.6 | In validation |
+| Orange Pi 4 Pro | Allwinner A733 (sun60iw2) | Armbian vendor 6.6 (custom, see below) | ✅ Validated |
 
-> **⚠️ ZWO EAF/EFW note:** AlpacaBridge's ZWO focuser/filter-wheel support is
-> validated on kernel **6.12.75+**. This board currently only has a **vendor
-> 6.6** kernel (no mainline/`current` branch exists for the A733 yet), so ZWO
-> EAF/EFW compatibility is **unverified** until ConformU validation passes on
-> this image — or the relevant fix is backported via a kernel patch.
+> **ZWO EAF/EFW:** the release image ships a **custom vendor 6.6 kernel** with
+> HIDRAW enabled and the upstream fix
+> [`HID: usbhid: paper over wrong bNumDescriptors field`](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=f28beb69c51517aec7067dfb2074e7c751542384)
+> backported (ZWO's HID accessories report a malformed descriptor that stock
+> 6.6 rejects). A udev rule granting device access is baked in. **Validated on
+> hardware:** a ZWO EAF connects out of the box and passes full ASCOM ConformU
+> validation via AlpacaBridge.
 
 ## Install
 
@@ -82,8 +84,22 @@ sudo build/build-openastro-image.sh armbian.img.xz images/openastro-orangepi4pro
 - [`build/build-openastro-image.sh`](build/build-openastro-image.sh) — customizes
   the Armbian image in a chroot and produces a compressed, flashable `.img.xz`.
 - [`openastro/openastro-setup.sh`](openastro/openastro-setup.sh) — the OpenAstro
-  layer (WiFi AP, baked-in credentials). Idempotent; also runnable directly on a
-  booted Armbian board.
+  layer (WiFi AP, baked-in credentials, ZWO udev rule). Idempotent; also
+  runnable directly on a booted Armbian board.
+
+### Custom kernel (ZWO support)
+
+The release image replaces the stock kernel with one built via the
+[Armbian build framework](https://github.com/armbian/build) with two config
+changes (`CONFIG_HIDRAW=y`, `CONFIG_USB_HIDDEV=y`) and the backported
+`bNumDescriptors` HID fix linked above as a userpatch. Build it with
+`./compile.sh kernel BOARD=orangepi4pro BRANCH=vendor KERNEL_CONFIGURE=no KERNEL_BTF=no`,
+then pass the resulting debs to the image build:
+
+```bash
+sudo KERNEL_DEBS=/path/to/armbian-build/output/debs \
+    build/build-openastro-image.sh armbian.img.xz images/openastro-orangepi4pro.img.xz
+```
 
 ## Hardware documentation
 
