@@ -1,6 +1,6 @@
 # OpenAstro for the Orange Pi 4 Pro
 
-<img src="https://www.openastro.net/img/oa512.png" alt="OpenAstro logo" width="420">
+<img src="https://www.openastro.net/wp-content/uploads/2026/04/OpenAstro_logo.png" alt="OpenAstro logo" width="420">
 
 OpenAstro OS for the **Orange Pi 4 Pro** (Allwinner A733): an
 [Armbian](https://www.armbian.com/)-based **Debian 13 (Trixie)** minimal CLI
