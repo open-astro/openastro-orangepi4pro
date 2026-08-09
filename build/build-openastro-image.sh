@@ -84,6 +84,11 @@ chroot "$MNT" /bin/bash -c "cd /opt/openastro && ./openastro-setup.sh"
 log "Cleaning image..."
 chroot "$MNT" /bin/bash -c "apt-get clean" || true
 rm -rf "$MNT"/var/lib/apt/lists/* "$MNT"/var/log/* "$MNT"/tmp/* 2>/dev/null || true
+# Recreate the persistent-journal dir the log wipe just removed (matches
+# openastro-setup.sh; systemd-journal is gid 999 on this image, but use the
+# name via chroot to be safe).
+install -d -m 2755 "$MNT/var/log/journal"
+chroot "$MNT" chgrp systemd-journal /var/log/journal 2>/dev/null || true
 rm -f "$MNT"/etc/ssh/ssh_host_*           # regenerated per-device on first boot
 : > "$MNT/etc/machine-id" 2>/dev/null || true
 rm -f "$MNT/etc/resolv.conf"              # don't ship the build host's DNS

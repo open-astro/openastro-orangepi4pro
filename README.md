@@ -48,16 +48,27 @@ card — leave it in.
 |---------|-------|
 | Hostname | `openastro` |
 | Login | `astro` / `astro` — **change immediately:** `passwd` |
-| WiFi AP | `OpenAstro` (2.4 GHz), password `12345678` |
+| WiFi AP | `OpenAstro-XXXX` (5 GHz, ch 36), password `12345678` |
 | AP address | `172.24.1.1` (DHCP for clients) |
 | Ethernet | DHCP |
 
-Reach it over ethernet (`ssh astro@<ip>`) or by joining the `OpenAstro` WiFi.
+`XXXX` is the last 4 hex digits of the board's WiFi MAC address (e.g.
+`OpenAstro-915D`), applied automatically on first boot so multiple boards in
+the same place each get a unique hotspot name.
+
+Reach it over ethernet (`ssh astro@<ip>`) or by joining the `OpenAstro-XXXX`
+WiFi. The access point starts automatically at every boot, so even if the
+board can't be reached over your network you can always join its hotspot and
+log in at `172.24.1.1`.
 
 ### Connect to your own network instead (optional)
 
-NetworkManager manages the wired port; `wlan0` is reserved for the access
-point. To put the board on your LAN, use the ethernet port.
+The wired port is managed by systemd-networkd (DHCP); `wlan0` is managed by
+NetworkManager and runs the access point by default. To put the board on your
+LAN, use the ethernet port, or switch WiFi to client mode with
+`nmcli` (e.g. `sudo nmcli dev wifi connect <SSID> password <pass>` — note this
+takes down the hotspot; the upcoming AlpacaBridge WiFi manager will handle
+this from the web portal with automatic hotspot fallback).
 
 ## Install AlpacaBridge
 
