@@ -63,19 +63,19 @@ log in at `172.24.1.1`.
 
 ### Connect to your own network instead (optional)
 
-The wired port is managed by systemd-networkd (DHCP); `wlan0` is managed by
-NetworkManager and runs the access point by default. To put the board on your
-LAN, use the ethernet port, or switch WiFi to client mode with
+All networking is managed by NetworkManager; `wlan0` runs the access point
+by default. To put the board on your LAN, use the ethernet port, or switch
+WiFi to client mode with
 `nmcli` (e.g. `sudo nmcli dev wifi connect <SSID> password <pass>` - note this
 takes down the hotspot; the upcoming AlpacaBridge WiFi manager will handle
 this from the web portal with automatic hotspot fallback).
 
-## Install AlpacaBridge
+## AlpacaBridge
 
-AlpacaBridge is **not** baked into the image. Install it by following the
-[AlpacaBridge install guide](https://github.com/open-astro/AlpacaBridge), which
-adds the OpenAstro apt repository and installs the package - the same as on
-every other platform.
+[AlpacaBridge](https://github.com/open-astro/AlpacaBridge) is **preinstalled**
+from the OpenAstro apt repository, so the board works at a dark site straight
+from the flash - no internet required. When the board does have internet, it
+stays current with `sudo apt update && sudo apt upgrade`.
 
 ## Build the image yourself
 
