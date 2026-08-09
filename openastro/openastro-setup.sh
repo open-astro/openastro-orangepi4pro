@@ -5,7 +5,9 @@
 # CLI, vendor 6.6 kernel) into the OpenAstro OS: a WiFi access point
 # (OpenAstro / 12345678), baked-in credentials (astro/astro, no first-boot
 # wizard), and the plumbing AlpacaBridge expects. The OS runs from the microSD
-# card — there is no eMMC/SPI install step.
+# card — there is no eMMC/SPI install step. On first boot the SSID gains a
+# per-board suffix from the wlan0 MAC (e.g. OpenAstro-915D) so multiple
+# boards don't collide.
 #
 # AlpacaBridge is NOT included here — users install it from the OpenAstro apt
 # repository (apt install alpacabridge), same as the other platforms.
@@ -98,6 +100,53 @@ addresses=${AP_IP}/24
 method=disabled
 EOF
 chmod 600 /etc/NetworkManager/system-connections/OpenAstro-AP.nmconnection
+
+# Keyfile was just (re)written with the generic SSID — let the suffixer run
+# again on next boot.
+rm -f /var/lib/openastro/ssid-set
+
+# Per-board SSID: suffix with the last 4 hex digits of the wlan0 MAC (the A733
+# exposes no serial number — no device-tree serial-number, no cpuinfo Serial,
+# no efuse nvmem — but the AIC8800 MAC is burned in and stable). Runs once on
+# first boot, before NM, so multiple boards at a star party don't collide on
+# the same SSID.
+cat > /usr/local/sbin/openastro-ssid <<'EOF'
+#!/bin/bash
+set -euo pipefail
+for _ in $(seq 1 60); do
+    [ -r /sys/class/net/wlan0/address ] && break
+    sleep 1
+done
+mac=$(tr -d ':' < /sys/class/net/wlan0/address)
+suffix=$(echo "${mac: -4}" | tr 'a-f' 'A-F')
+[ ${#suffix} -eq 4 ] || exit 0   # no/odd MAC: keep the generic SSID
+sed -i "s/^ssid=\(.*\)/ssid=\1-${suffix}/" \
+    /etc/NetworkManager/system-connections/OpenAstro-AP.nmconnection
+EOF
+chmod 755 /usr/local/sbin/openastro-ssid
+
+cat > /etc/systemd/system/openastro-ssid.service <<'EOF'
+[Unit]
+Description=OpenAstro: per-board AP SSID from wlan0 MAC
+Before=NetworkManager.service
+ConditionPathExists=!/var/lib/openastro/ssid-set
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/openastro-ssid
+ExecStartPost=/bin/mkdir -p /var/lib/openastro
+ExecStartPost=/bin/touch /var/lib/openastro/ssid-set
+
+[Install]
+WantedBy=multi-user.target
+EOF
+mkdir -p /etc/systemd/system/NetworkManager.service.d
+cat > /etc/systemd/system/NetworkManager.service.d/openastro-ssid.conf <<'EOF'
+[Unit]
+After=openastro-ssid.service
+Wants=openastro-ssid.service
+EOF
+systemctl enable openastro-ssid.service >/dev/null 2>&1
 
 # Regdom for the 5 GHz AP (hostapd used to set this via country_code; the NM
 # path needs it set globally).
