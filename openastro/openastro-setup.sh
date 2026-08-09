@@ -165,6 +165,17 @@ rm -f /etc/hostapd/hostapd.conf /etc/default/hostapd \
       /etc/NetworkManager/conf.d/10-openastro-wlan0-unmanaged.conf
 systemctl daemon-reload >/dev/null 2>&1 || true
 
+# WiFi behavior for an always-on hotspot: no powersave (an AP that naps
+# drops clients serving a mount all night) and no scan MAC randomization
+# (keeps the radio identity stable/predictable).
+cat > /etc/NetworkManager/conf.d/20-openastro-wifi.conf <<'EOF'
+[connection]
+wifi.powersave=2
+
+[device]
+wifi.scan-rand-mac-address=no
+EOF
+
 systemctl enable NetworkManager >/dev/null 2>&1
 
 log "WiFi AP configured (SSID: ${AP_SSID}, band ${AP_BAND} ch${AP_CHANNEL}, ${AP_IP})."
