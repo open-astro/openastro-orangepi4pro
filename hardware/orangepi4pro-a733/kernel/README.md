@@ -3,10 +3,10 @@
 The release image ships an Armbian **vendor 6.6** kernel rebuilt with these
 two inputs, both required for ZWO EAF/EFW/CAA (USB HID) support:
 
-- `linux-sun60iw2-vendor.config` — stock Armbian
+- `linux-sun60iw2-vendor.config` - stock Armbian
   `config/kernel/linux-sun60iw2-vendor.config` with exactly two changes:
   `CONFIG_HIDRAW=y`, `CONFIG_USB_HIDDEV=y`.
-- `hid-usbhid-paper-over-wrong-bNumDescriptors.patch` — upstream commit
+- `hid-usbhid-paper-over-wrong-bNumDescriptors.patch` - upstream commit
   [f28beb69c515](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=f28beb69c51517aec7067dfb2074e7c751542384)
   ("HID: usbhid: paper over wrong bNumDescriptors field"). ZWO HID accessories
   report a malformed HID descriptor that 6.6's usbhid rejects with
@@ -34,5 +34,5 @@ Output debs land in `output/debs/`; feed them to the image build with
 `KERNEL_DEBS=` (see the top-level README).
 
 The userpatch directory name (`sun60iw2-opi-vendor`) must match
-`KERNELPATCHDIR` in Armbian's `config/sources/families/sun60iw2.conf` — check
+`KERNELPATCHDIR` in Armbian's `config/sources/families/sun60iw2.conf` - check
 there if patches aren't picked up after an Armbian framework update.

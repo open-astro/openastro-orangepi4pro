@@ -7,7 +7,7 @@ OpenAstro OS for the **Orange Pi 4 Pro** (Allwinner A733): an
 image (no GUI) with a WiFi access point and everything ready for
 [AlpacaBridge](https://github.com/open-astro/AlpacaBridge).
 
-The OS **runs from the microSD card** — flash it, insert it, power on. There is
+The OS **runs from the microSD card** - flash it, insert it, power on. There is
 no internal-storage install step.
 
 ## Supported hardware
@@ -40,14 +40,14 @@ xzcat openastro-orangepi4pro.img.xz | sudo dd of=/dev/sdX bs=4M status=progress 
 ### 2. Boot
 
 Insert the microSD and power on. The board boots and runs entirely from the SD
-card — leave it in.
+card - leave it in.
 
 ## First boot defaults
 
 | Setting | Value |
 |---------|-------|
 | Hostname | `openastro` |
-| Login | `astro` / `astro` — **change immediately:** `passwd` |
+| Login | `astro` / `astro` - **change immediately:** `passwd` |
 | WiFi AP | `OpenAstro-XXXX` (5 GHz, ch 36), password `12345678` |
 | AP address | `172.24.1.1` (DHCP for clients) |
 | Ethernet | DHCP |
@@ -66,7 +66,7 @@ log in at `172.24.1.1`.
 The wired port is managed by systemd-networkd (DHCP); `wlan0` is managed by
 NetworkManager and runs the access point by default. To put the board on your
 LAN, use the ethernet port, or switch WiFi to client mode with
-`nmcli` (e.g. `sudo nmcli dev wifi connect <SSID> password <pass>` — note this
+`nmcli` (e.g. `sudo nmcli dev wifi connect <SSID> password <pass>` - note this
 takes down the hotspot; the upcoming AlpacaBridge WiFi manager will handle
 this from the web portal with automatic hotspot fallback).
 
@@ -74,14 +74,14 @@ this from the web portal with automatic hotspot fallback).
 
 AlpacaBridge is **not** baked into the image. Install it by following the
 [AlpacaBridge install guide](https://github.com/open-astro/AlpacaBridge), which
-adds the OpenAstro apt repository and installs the package — the same as on
+adds the OpenAstro apt repository and installs the package - the same as on
 every other platform.
 
 ## Build the image yourself
 
 The release image is built from a stock Armbian *Orange Pi 4 Pro* image plus
 the OpenAstro layer. On an **aarch64** host (an arm64 Debian/Armbian box, or
-the board itself — it's a native chroot, no emulation):
+the board itself - it's a native chroot, no emulation):
 
 ```bash
 # 1. grab the upstream Armbian "Orange Pi 4 Pro" (Trixie, vendor kernel) image
@@ -92,9 +92,9 @@ sudo apt install parted e2fsprogs
 sudo build/build-openastro-image.sh armbian.img.xz images/openastro-orangepi4pro.img.xz
 ```
 
-- [`build/build-openastro-image.sh`](build/build-openastro-image.sh) — customizes
+- [`build/build-openastro-image.sh`](build/build-openastro-image.sh) - customizes
   the Armbian image in a chroot and produces a compressed, flashable `.img.xz`.
-- [`openastro/openastro-setup.sh`](openastro/openastro-setup.sh) — the OpenAstro
+- [`openastro/openastro-setup.sh`](openastro/openastro-setup.sh) - the OpenAstro
   layer (WiFi AP, baked-in credentials, ZWO udev rule). Idempotent; also
   runnable directly on a booted Armbian board.
 

@@ -1,6 +1,6 @@
-# Orange Pi 4 Pro — hardware inventory
+# Orange Pi 4 Pro - hardware inventory
 
-Status: **pre-validation** — fill in as items are confirmed on real hardware.
+Status: **pre-validation** - fill in as items are confirmed on real hardware.
 
 ## SoC / board
 
@@ -8,7 +8,7 @@ Status: **pre-validation** — fill in as items are confirmed on real hardware.
 |------|-------|
 | SoC | Allwinner A733 (sun60iw2), 2× Cortex-A76 @ 2.0 GHz + 6× Cortex-A55 @ 1.8 GHz |
 | Armbian board config | [`orangepi4pro.csc`](https://github.com/armbian/build/tree/main/config/boards/orangepi4pro.csc) (community-supported) |
-| Kernel | vendor 6.6 BSP only — no mainline/`current` branch yet |
+| Kernel | vendor 6.6 BSP only - no mainline/`current` branch yet |
 | DTB | `allwinner/sun60i-a733-orangepi-4-pro.dtb` |
 | Boot media | microSD (this image runs from SD; board also has eMMC + 16 MB SPI-NOR, unused by us) |
 | Power | 5 V / 3 A USB-C |
@@ -26,6 +26,6 @@ Status: **pre-validation** — fill in as items are confirmed on real hardware.
 - [x] OpenAstro image boots from SD (first boot resizes rootfs to full card, then sshd starts)
 - [x] `wlan0` appears; hostapd AP comes up (SSID `OpenAstro`, ch6/2.4 GHz, state=ENABLED)
 - [ ] NAT/DHCP for AP clients works over the ethernet uplink (join AP, check DHCP lease + internet)
-- [ ] USB: ZWO camera, EAF, EFW enumerate (vendor 6.6 kernel — see README caveat)
+- [ ] USB: ZWO camera, EAF, EFW enumerate (vendor 6.6 kernel - see README caveat)
 - [ ] AlpacaBridge ConformU run (v4.4.0)
 - [x] SD is `mmcblk1` (root `/dev/mmcblk1p1`); ethernet is `end0`; wlan0 MAC 78:70:57:88:91:5d
