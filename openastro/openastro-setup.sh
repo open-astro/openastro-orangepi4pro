@@ -9,8 +9,8 @@
 # per-board suffix from the wlan0 MAC (e.g. OpenAstro-915D) so multiple
 # boards don't collide.
 #
-# AlpacaBridge is NOT included here - users install it from the OpenAstro apt
-# repository (apt install alpacabridge), same as the other platforms.
+# AlpacaBridge is preinstalled from the OpenAstro apt repository
+# (apt.openastro.net) and stays current with apt upgrade.
 #
 # WiFi/BT is an AIC8800D80 combo chip (vendor driver in the Armbian image; BT
 # is UART HCI). The AP is a NetworkManager keyfile connection (mode=ap,
@@ -47,22 +47,35 @@ apt-get update -qq
 # without it the AP flaps forever with "could not start dnsmasq".
 apt-get install -y -qq \
     network-manager polkitd dnsmasq-base iw wireless-regdb \
+    ca-certificates curl gnupg \
     >/dev/null
 
 # ============================================================
-# WiFi access point (NetworkManager; ethernet stays on systemd-networkd)
+# Networking (NetworkManager manages everything - fleet standard)
 # ============================================================
-# NM owns wlan0 only. The AP is an NM keyfile connection with mode=ap and
-# ipv4.method=shared - NM's internal dnsmasq serves DHCP/DNS and sets up NAT
-# to whatever uplink exists, replacing the old hostapd + dnsmasq + iptables
-# stack. AlpacaBridge's WiFi manager drives this same NM setup over D-Bus
-# (polkitd authorizes it; the polkit rule ships in the AlpacaBridge .deb).
-log "Configuring WiFi access point..."
+# NM owns all interfaces, matching the Raspberry Pi image: ethernet (end0)
+# gets NM's default DHCP, wlan0 runs the AP. The AP is an NM keyfile
+# connection with mode=ap and ipv4.method=shared - NM's internal dnsmasq
+# serves DHCP/DNS and sets up NAT to whatever uplink exists, replacing the
+# old hostapd + dnsmasq + iptables stack. AlpacaBridge's WiFi manager drives
+# this same NM setup over D-Bus (polkitd authorizes it; the polkit rule
+# ships in the AlpacaBridge .deb).
+log "Configuring networking (NetworkManager)..."
 
-cat > /etc/NetworkManager/conf.d/10-openastro-unmanaged.conf <<EOF
-[keyfile]
-unmanaged-devices=interface-name:end0;interface-name:lo
+# Retire the old NM/networkd split (earlier layers unmanaged end0).
+rm -f /etc/NetworkManager/conf.d/10-openastro-unmanaged.conf
+# Armbian drives ethernet through netplan's networkd renderer; hand the whole
+# stack to NM instead and stop networkd so the two don't fight over end0.
+if [ -d /etc/netplan ]; then
+    rm -f /etc/netplan/*.yaml
+    cat > /etc/netplan/10-openastro.yaml <<EOF
+network:
+  version: 2
+  renderer: NetworkManager
 EOF
+    chmod 600 /etc/netplan/10-openastro.yaml
+fi
+systemctl disable systemd-networkd.service systemd-networkd.socket >/dev/null 2>&1 || true
 
 # autoconnect keeps the hotspot up from boot: the board is always reachable
 # at ${AP_IP} via its own AP even when the user can't log in over their LAN.
@@ -240,4 +253,16 @@ echo "${OA_USER}:${OA_PASS}" | chpasswd
 systemctl disable armbian-firstlogin.service 2>/dev/null || true
 rm -f /root/.not_logged_in_yet 2>/dev/null || true
 
-log "OpenAstro OS layer complete (WiFi AP + identity). Install AlpacaBridge with: apt install alpacabridge"
+# ============================================================
+# AlpacaBridge (preinstalled - the whole point of the appliance;
+# a dark site has no internet to apt install from)
+# ============================================================
+log "Installing AlpacaBridge from apt.openastro.net..."
+curl -fsSL https://apt.openastro.net/repo/openastro-archive-keyring.gpg \
+    | gpg --dearmor --yes -o /usr/share/keyrings/openastro-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/openastro-archive-keyring.gpg] https://apt.openastro.net trixie main" \
+    > /etc/apt/sources.list.d/openastro.list
+apt-get update -qq
+apt-get install -y -qq alpacabridge >/dev/null
+
+log "OpenAstro OS layer complete (WiFi AP + identity + AlpacaBridge)."
