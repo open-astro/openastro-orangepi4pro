@@ -40,8 +40,11 @@ log() { echo "[openastro] $*"; }
 log "Installing packages..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
+# dnsmasq-base must be explicit: NM's shared/AP mode needs it, but it's only
+# a Recommends of network-manager and Armbian minimal disables recommends —
+# without it the AP flaps forever with "could not start dnsmasq".
 apt-get install -y -qq \
-    network-manager polkitd iw wireless-regdb \
+    network-manager polkitd dnsmasq-base iw wireless-regdb \
     >/dev/null
 
 # ============================================================
@@ -73,6 +76,9 @@ autoconnect=true
 # Below default (0): saved client networks are tried first; the hotspot is
 # the fallback when none of them connects.
 autoconnect-priority=-10
+# Retry forever: with the default (4 attempts) a slow first boot — vendor WiFi
+# firmware or dnsmasq not ready yet — permanently blocks the AP until reboot.
+autoconnect-retries=0
 
 [wifi]
 mode=ap
@@ -113,6 +119,37 @@ systemctl daemon-reload >/dev/null 2>&1 || true
 systemctl enable NetworkManager >/dev/null 2>&1
 
 log "WiFi AP configured (SSID: ${AP_SSID}, band ${AP_BAND} ch${AP_CHANNEL}, ${AP_IP})."
+
+# ============================================================
+# First-boot reliability
+# ============================================================
+# The image build strips SSH host keys (unique per device). Regenerate them
+# deterministically before sshd starts — otherwise ssh.service fails on first
+# boot ("Connection refused" until a reboot), racing Armbian's first-run.
+cat > /etc/systemd/system/openastro-sshkeys.service <<'EOF'
+[Unit]
+Description=OpenAstro: generate SSH host keys on first boot
+Before=ssh.service
+ConditionPathExists=!/etc/ssh/ssh_host_ed25519_key
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/ssh-keygen -A
+
+[Install]
+WantedBy=multi-user.target
+EOF
+mkdir -p /etc/systemd/system/ssh.service.d
+cat > /etc/systemd/system/ssh.service.d/openastro-after-keys.conf <<'EOF'
+[Unit]
+After=openastro-sshkeys.service
+Wants=openastro-sshkeys.service
+EOF
+systemctl enable openastro-sshkeys.service >/dev/null 2>&1
+
+# Persistent journal, so first-boot failures survive a power cycle and can
+# actually be debugged (volatile journal cost us the evidence once).
+install -d -m 2755 -g systemd-journal /var/log/journal
 
 # ============================================================
 # Astro-device permissions (present from first boot, so device
