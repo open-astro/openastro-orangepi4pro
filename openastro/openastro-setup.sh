@@ -5,16 +5,16 @@
 # CLI, vendor 6.6 kernel) into the OpenAstro OS: a WiFi access point
 # (OpenAstro / 12345678), baked-in credentials (astro/astro, no first-boot
 # wizard), and the plumbing AlpacaBridge expects. The OS runs from the microSD
-# card — there is no eMMC/SPI install step. On first boot the SSID gains a
+# card - there is no eMMC/SPI install step. On first boot the SSID gains a
 # per-board suffix from the wlan0 MAC (e.g. OpenAstro-915D) so multiple
 # boards don't collide.
 #
-# AlpacaBridge is NOT included here — users install it from the OpenAstro apt
+# AlpacaBridge is NOT included here - users install it from the OpenAstro apt
 # repository (apt install alpacabridge), same as the other platforms.
 #
 # WiFi/BT is an AIC8800D80 combo chip (vendor driver in the Armbian image; BT
 # is UART HCI). The AP is a NetworkManager keyfile connection (mode=ap,
-# ipv4.method=shared) — 5 GHz ch36 by default, validated live on hardware
+# ipv4.method=shared) - 5 GHz ch36 by default, validated live on hardware
 # 2026-08-09 (see AlpacaBridge docs/opi4pro-image-notes.md). Set AP_BAND=bg
 # AP_CHANNEL=6 for a 2.4 GHz fallback if range/mount compatibility needs it.
 # The AP autoconnects at boot so the board is always reachable via its own
@@ -43,7 +43,7 @@ log "Installing packages..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 # dnsmasq-base must be explicit: NM's shared/AP mode needs it, but it's only
-# a Recommends of network-manager and Armbian minimal disables recommends —
+# a Recommends of network-manager and Armbian minimal disables recommends -
 # without it the AP flaps forever with "could not start dnsmasq".
 apt-get install -y -qq \
     network-manager polkitd dnsmasq-base iw wireless-regdb \
@@ -53,7 +53,7 @@ apt-get install -y -qq \
 # WiFi access point (NetworkManager; ethernet stays on systemd-networkd)
 # ============================================================
 # NM owns wlan0 only. The AP is an NM keyfile connection with mode=ap and
-# ipv4.method=shared — NM's internal dnsmasq serves DHCP/DNS and sets up NAT
+# ipv4.method=shared - NM's internal dnsmasq serves DHCP/DNS and sets up NAT
 # to whatever uplink exists, replacing the old hostapd + dnsmasq + iptables
 # stack. AlpacaBridge's WiFi manager drives this same NM setup over D-Bus
 # (polkitd authorizes it; the polkit rule ships in the AlpacaBridge .deb).
@@ -78,8 +78,8 @@ autoconnect=true
 # Below default (0): saved client networks are tried first; the hotspot is
 # the fallback when none of them connects.
 autoconnect-priority=-10
-# Retry forever: with the default (4 attempts) a slow first boot — vendor WiFi
-# firmware or dnsmasq not ready yet — permanently blocks the AP until reboot.
+# Retry forever: with the default (4 attempts) a slow first boot - vendor WiFi
+# firmware or dnsmasq not ready yet - permanently blocks the AP until reboot.
 autoconnect-retries=0
 
 [wifi]
@@ -101,13 +101,13 @@ method=disabled
 EOF
 chmod 600 /etc/NetworkManager/system-connections/OpenAstro-AP.nmconnection
 
-# Keyfile was just (re)written with the generic SSID — let the suffixer run
+# Keyfile was just (re)written with the generic SSID - let the suffixer run
 # again on next boot.
 rm -f /var/lib/openastro/ssid-set
 
 # Per-board SSID: suffix with the last 4 hex digits of the wlan0 MAC (the A733
-# exposes no serial number — no device-tree serial-number, no cpuinfo Serial,
-# no efuse nvmem — but the AIC8800 MAC is burned in and stable). Runs once on
+# exposes no serial number - no device-tree serial-number, no cpuinfo Serial,
+# no efuse nvmem - but the AIC8800 MAC is burned in and stable). Runs once on
 # first boot, before NM, so multiple boards at a star party don't collide on
 # the same SSID.
 cat > /usr/local/sbin/openastro-ssid <<'EOF'
@@ -173,7 +173,7 @@ log "WiFi AP configured (SSID: ${AP_SSID}, band ${AP_BAND} ch${AP_CHANNEL}, ${AP
 # First-boot reliability
 # ============================================================
 # The image build strips SSH host keys (unique per device). Regenerate them
-# deterministically before sshd starts — otherwise ssh.service fails on first
+# deterministically before sshd starts - otherwise ssh.service fails on first
 # boot ("Connection refused" until a reboot), racing Armbian's first-run.
 cat > /etc/systemd/system/openastro-sshkeys.service <<'EOF'
 [Unit]
@@ -214,7 +214,7 @@ KERNEL=="hiddev*", ATTRS{idVendor}=="03c3", GROUP="users", MODE="0666"
 EOF
 
 # ============================================================
-# System identity (turnkey — no Armbian first-boot wizard)
+# System identity (turnkey - no Armbian first-boot wizard)
 # ============================================================
 log "Setting system identity..."
 OA_HOSTNAME="${OPENASTRO_HOSTNAME:-openastro}"

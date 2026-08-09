@@ -4,7 +4,7 @@
 # Customizes a stock Armbian "Orange Pi 4 Pro" image (Debian 13 Trixie minimal
 # CLI, vendor 6.6 kernel) by running the OpenAstro layer
 # (openastro/openastro-setup.sh) inside a chroot, then repacks it as a
-# compressed, flashable image. The build host must be aarch64 (native chroot —
+# compressed, flashable image. The build host must be aarch64 (native chroot -
 # no qemu), e.g. another Armbian/Debian arm64 box or the board itself.
 #
 # Usage: sudo build/build-openastro-image.sh <stock-armbian.img[.xz]> [output.img.xz]
@@ -13,7 +13,7 @@
 # armbian-build output/debs) into the image, replacing the stock kernel. Used to
 # ship the CONFIG_HIDRAW-enabled vendor kernel needed for ZWO EAF/EFW.
 #
-# AlpacaBridge is NOT baked in — users apt-install it after flashing.
+# AlpacaBridge is NOT baked in - users apt-install it after flashing.
 set -euo pipefail
 
 REPODIR="$(cd "$(dirname "$0")/.." && pwd)"
