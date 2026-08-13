@@ -20,7 +20,26 @@ set -euo pipefail
 REPODIR="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="${1:?usage: $0 <stock-armbian.img[.xz]> [output.img.xz]}"
 OUT="${2:-$REPODIR/images/openastro-orangepi4pro.img.xz}"
-WORK="$(mktemp -d)"
+# The staged image grows to ~5+ GB; /tmp is often a small RAM-backed tmpfs,
+# and running out of space mid-build corrupts the loop-mounted filesystem
+# (ENOSPC -> journal abort -> read-only). Pick the first writable dir with
+# at least 8 GB free: $TMPDIR, the repo's images dir, /var/tmp, then /tmp.
+pick_workdir() {
+    local d avail
+    for d in "${TMPDIR:-}" "$REPODIR/images" /var/tmp /tmp; do
+        [ -n "$d" ] || continue
+        mkdir -p "$d" 2>/dev/null || true
+        [ -d "$d" ] && [ -w "$d" ] || continue
+        avail=$(df -Pk "$d" 2>/dev/null | awk 'NR==2{print $4}')
+        if [ "${avail:-0}" -ge 8388608 ]; then echo "$d"; return 0; fi
+    done
+    return 1
+}
+WORKBASE="$(pick_workdir)" || {
+    echo "Need ~8 GB free for the staged image; none of TMPDIR, $REPODIR/images, /var/tmp, /tmp has enough." >&2
+    exit 1
+}
+WORK="$(mktemp -d "$WORKBASE/openastro-build-XXXXXX")"
 IMG="$WORK/openastro.img"
 MNT="$WORK/rootfs"
 LOOP=""
