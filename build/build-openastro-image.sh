@@ -13,7 +13,8 @@
 # armbian-build output/debs) into the image, replacing the stock kernel. Used to
 # ship the CONFIG_HIDRAW-enabled vendor kernel needed for ZWO EAF/EFW.
 #
-# AlpacaBridge is NOT baked in - users apt-install it after flashing.
+# AlpacaBridge 3.4.0+ is preinstalled from apt.openastro.net (needs outbound
+# network in the chroot; INSTALL_ALPACABRIDGE=no to skip).
 set -euo pipefail
 
 REPODIR="$(cd "$(dirname "$0")/.." && pwd)"

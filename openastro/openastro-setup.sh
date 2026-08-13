@@ -42,11 +42,15 @@ log() { echo "[openastro] $*"; }
 log "Installing packages..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-# dnsmasq-base must be explicit: NM's shared/AP mode needs it, but it's only
-# a Recommends of network-manager and Armbian minimal disables recommends -
-# without it the AP flaps forever with "could not start dnsmasq".
+# dnsmasq-base and wpasupplicant must be explicit: NM's shared/AP mode needs
+# both, but they are only Recommends of network-manager and Armbian minimal
+# disables recommends. Without dnsmasq the AP flaps forever with "could not
+# start dnsmasq"; without wpa_supplicant NM leaves every wifi device
+# "unavailable" and the AP never activates at all (wpasupplicant currently
+# rides in with the Armbian base image, but that is not a contract - the
+# rk3568 image shipped broken wifi from exactly this assumption).
 apt-get install -y -qq \
-    network-manager polkitd dnsmasq-base iw wireless-regdb \
+    network-manager wpasupplicant polkitd dnsmasq-base iw wireless-regdb \
     ca-certificates curl gnupg \
     >/dev/null
 
@@ -257,9 +261,9 @@ rm -f /root/.not_logged_in_yet 2>/dev/null || true
 # AlpacaBridge (preinstalled - the whole point of the appliance;
 # a dark site has no internet to apt install from)
 # ============================================================
-# Temporarily off by default: waiting on the next AlpacaBridge release
-# (new WiFi module). Flip to yes once it ships.
-INSTALL_ALPACABRIDGE="${INSTALL_ALPACABRIDGE:-no}"
+# On by default since AlpacaBridge 3.4.0 shipped the WiFi manager
+# (hardware-validated on this board). Set INSTALL_ALPACABRIDGE=no to skip.
+INSTALL_ALPACABRIDGE="${INSTALL_ALPACABRIDGE:-yes}"
 if [ "$INSTALL_ALPACABRIDGE" = yes ]; then
 log "Installing AlpacaBridge from apt.openastro.net..."
 curl -fsSL https://apt.openastro.net/repo/openastro-archive-keyring.gpg \
