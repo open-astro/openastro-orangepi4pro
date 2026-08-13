@@ -48,7 +48,7 @@ card - leave it in.
 |---------|-------|
 | Hostname | `openastro` |
 | Login | `astro` / `astro` - **change immediately:** `passwd` |
-| WiFi AP | `OpenAstro-XXXX` (5 GHz, ch 36), password `12345678` |
+| WiFi AP | `OpenAstro-XXXX` (2.4 GHz, ch 6, dedicated `ap0` interface), password `12345678` |
 | AP address | `172.24.1.1` (DHCP for clients) |
 | Ethernet | DHCP |
 
@@ -63,13 +63,16 @@ log in at `172.24.1.1`.
 
 ### Connect to your own network instead (optional)
 
-All networking is managed by NetworkManager; `wlan0` runs the access point
-by default. To put the board on your LAN, use the ethernet port, or switch
-WiFi to client mode with
-`nmcli` (e.g. `sudo nmcli dev wifi connect <SSID> password <pass>`), or use
+All networking is managed by NetworkManager. The hotspot runs on a dedicated
+virtual AP interface (`ap0`, 2.4 GHz), so **joining a WiFi network does not
+drop the hotspot** - the AIC8800D80 runs AP + client concurrently (validated
+on hardware: hotspot on 2.4 GHz ch6 while `wlan0` is joined to a 5 GHz
+network). Put the board on your LAN with the ethernet port, with
+`nmcli` (e.g. `sudo nmcli dev wifi connect <SSID> password <pass>`), or from
 the AlpacaBridge web portal's **WiFi card** (Server tab), which handles
-scanning, saved networks, hotspot settings, and the regulatory country with
-automatic hotspot fallback.
+scanning, saved networks, hotspot settings, and the regulatory country.
+Hotspot clients reach the internet through whatever uplink the board has
+(ethernet or WiFi client).
 
 ## AlpacaBridge
 

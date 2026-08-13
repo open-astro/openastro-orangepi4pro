@@ -14,11 +14,15 @@
 #
 # WiFi/BT is an AIC8800D80 combo chip (vendor driver in the Armbian image; BT
 # is UART HCI). The AP is a NetworkManager keyfile connection (mode=ap,
-# ipv4.method=shared) - 5 GHz ch36 by default, validated live on hardware
-# 2026-08-09 (see AlpacaBridge docs/opi4pro-image-notes.md). Set AP_BAND=bg
-# AP_CHANNEL=6 for a 2.4 GHz fallback if range/mount compatibility needs it.
-# The AP autoconnects at boot so the board is always reachable via its own
-# hotspot even when it can't be reached over the local network.
+# ipv4.method=shared) on a dedicated virtual AP interface (ap0): the driver
+# advertises (and hardware-validated 2026-08-13 delivers) concurrent AP+STA -
+# 1 managed + 1 AP, up to 3 channels - so the hotspot stays up on 2.4 GHz ch6
+# while wlan0 is free to join the user's network on either band (the ASIAIR
+# uap0 pattern). 2.4 GHz is the AP default for range and to keep the mixed-
+# band concurrency case the tested one; AP_BAND=a AP_CHANNEL=36 for 5 GHz
+# (also validated standalone 2026-08-09, see AlpacaBridge
+# docs/opi4pro-image-notes.md). The AP autoconnects at boot so the board is
+# always reachable via its own hotspot.
 #
 # Idempotent: safe to re-run. Runs as root, either in the image-build chroot
 # (build/build-openastro-image.sh) or post-flash on a booted board.
@@ -29,8 +33,8 @@ set -euo pipefail
 AP_SSID="${AP_SSID:-OpenAstro}"
 AP_PASSPHRASE="${AP_PASSPHRASE:-12345678}"
 AP_IP="${AP_IP:-172.24.1.1}"                # pinned (not NM's 10.42.0.1 default) so docs can give a fixed bridge IP
-AP_BAND="${AP_BAND:-a}"                     # 5 GHz validated live on the AIC8800D80 2026-08-09; "bg" = 2.4 GHz fallback
-AP_CHANNEL="${AP_CHANNEL:-36}"
+AP_BAND="${AP_BAND:-bg}"                    # 2.4 GHz: range + validated concurrent with a 5 GHz client; "a"/36 = 5 GHz
+AP_CHANNEL="${AP_CHANNEL:-6}"
 AP_COUNTRY="${AP_COUNTRY:-US}"
 
 log() { echo "[openastro] $*"; }
@@ -49,8 +53,11 @@ apt-get update -qq
 # "unavailable" and the AP never activates at all (wpasupplicant currently
 # rides in with the Armbian base image, but that is not a contract - the
 # rk3568 image shipped broken wifi from exactly this assumption).
+# nftables is equally load-bearing: NM's shared mode builds its NAT/masquerade
+# with it (or iptables), and Armbian minimal ships NEITHER - without one of
+# them hotspot clients get DHCP+DNS but silently no internet.
 apt-get install -y -qq \
-    network-manager wpasupplicant polkitd dnsmasq-base iw wireless-regdb \
+    network-manager wpasupplicant polkitd dnsmasq-base nftables iw wireless-regdb \
     ca-certificates curl gnupg \
     >/dev/null
 
@@ -81,6 +88,49 @@ EOF
 fi
 systemctl disable systemd-networkd.service systemd-networkd.socket >/dev/null 2>&1 || true
 
+# Dedicated AP interface: the hotspot lives on ap0 so wlan0 stays free for
+# client mode - joining a network from the AlpacaBridge WiFi card no longer
+# drops the hotspot. ap0 must exist before NM starts; a oneshot creates it
+# from phy0 each boot (virtual interfaces don't persist). Its MAC is wlan0's
+# with the locally-administered bit set, so the two interfaces never collide.
+cat > /usr/local/sbin/openastro-ap-iface <<'EOF'
+#!/bin/bash
+set -euo pipefail
+for _ in $(seq 1 60); do
+    [ -d /sys/class/ieee80211/phy0 ] && break
+    sleep 1
+done
+[ -d /sys/class/ieee80211/phy0 ] || exit 0
+ip link show ap0 >/dev/null 2>&1 && exit 0
+iw phy phy0 interface add ap0 type __ap
+if [ -r /sys/class/net/wlan0/address ]; then
+    mac=$(cat /sys/class/net/wlan0/address)
+    first=$(( (0x${mac%%:*} | 0x02) & 0xfe ))
+    ip link set ap0 address "$(printf '%02x' "$first")${mac#??}" || true
+fi
+EOF
+chmod 755 /usr/local/sbin/openastro-ap-iface
+
+cat > /etc/systemd/system/openastro-ap-iface.service <<'EOF'
+[Unit]
+Description=OpenAstro: create dedicated AP interface (ap0)
+Before=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/openastro-ap-iface
+
+[Install]
+WantedBy=multi-user.target
+EOF
+mkdir -p /etc/systemd/system/NetworkManager.service.d
+cat > /etc/systemd/system/NetworkManager.service.d/openastro-ap-iface.conf <<'EOF'
+[Unit]
+After=openastro-ap-iface.service
+Wants=openastro-ap-iface.service
+EOF
+systemctl enable openastro-ap-iface.service >/dev/null 2>&1
+
 # autoconnect keeps the hotspot up from boot: the board is always reachable
 # at ${AP_IP} via its own AP even when the user can't log in over their LAN.
 AP_UUID=$(cat /proc/sys/kernel/random/uuid)
@@ -90,7 +140,7 @@ cat > /etc/NetworkManager/system-connections/OpenAstro-AP.nmconnection <<EOF
 id=OpenAstro-AP
 uuid=${AP_UUID}
 type=wifi
-interface-name=wlan0
+interface-name=ap0
 autoconnect=true
 # Below default (0): saved client networks are tried first; the hotspot is
 # the fallback when none of them connects.
