@@ -48,7 +48,7 @@ card - leave it in.
 |---------|-------|
 | Hostname | `openastro` |
 | Login | `astro` / `astro` - **change immediately:** `passwd` |
-| WiFi AP | `OpenAstro-XXXX` (5 GHz, ch 36), password `12345678` |
+| WiFi AP | `OpenAstro-XXXX` (2.4 GHz, ch 6, dedicated `ap0` interface), password `12345678` |
 | AP address | `172.24.1.1` (DHCP for clients) |
 | Ethernet | DHCP |
 
@@ -61,21 +61,42 @@ WiFi. The access point starts automatically at every boot, so even if the
 board can't be reached over your network you can always join its hotspot and
 log in at `172.24.1.1`.
 
+### Hotspot band: 2.4 GHz by default, 5 GHz after setting a country
+
+The hotspot starts on the **2.4 GHz** band (channel 6) and stays there until
+you set a **regulatory country**. 5 GHz channels are restricted by the
+regulatory domain, and out of the box the board has none configured - so
+switching the hotspot to 5 GHz before setting a country will make it
+disappear for most devices. Set the country in the AlpacaBridge web portal's
+**WiFi card** (Server tab), and the hotspot can then be moved to 5 GHz and
+works normally.
+
+This only applies to the board's own hotspot: connecting the board to your
+home WiFi as a client works on **both 2.4 GHz and 5 GHz** regardless.
+
 ### Connect to your own network instead (optional)
 
-All networking is managed by NetworkManager; `wlan0` runs the access point
-by default. To put the board on your LAN, use the ethernet port, or switch
-WiFi to client mode with
-`nmcli` (e.g. `sudo nmcli dev wifi connect <SSID> password <pass>` - note this
-takes down the hotspot; the upcoming AlpacaBridge WiFi manager will handle
-this from the web portal with automatic hotspot fallback).
+All networking is managed by NetworkManager. The hotspot runs on a dedicated
+virtual AP interface (`ap0`, 2.4 GHz), so **joining a WiFi network does not
+drop the hotspot** - the AIC8800D80 runs AP + client concurrently (validated
+on hardware: hotspot on 2.4 GHz ch6 while `wlan0` is joined to a 5 GHz
+network). Put the board on your LAN with the ethernet port, with
+`nmcli` (e.g. `sudo nmcli dev wifi connect <SSID> password <pass>`), or from
+the AlpacaBridge web portal's **WiFi card** (Server tab), which handles
+scanning, saved networks, hotspot settings, and the regulatory country.
+Hotspot clients reach the internet through whatever uplink the board has
+(ethernet or WiFi client).
 
 ## AlpacaBridge
 
-[AlpacaBridge](https://github.com/open-astro/AlpacaBridge) is **preinstalled**
-from the OpenAstro apt repository, so the board works at a dark site straight
-from the flash - no internet required. When the board does have internet, it
-stays current with `sudo apt update && sudo apt upgrade`.
+[AlpacaBridge](https://github.com/open-astro/AlpacaBridge) (3.5.1+, with the
+WiFi manager) is **preinstalled** from the OpenAstro apt repository, so the
+board works at a dark site straight from the flash - no internet required.
+When the board does have internet, it stays current with
+`sudo apt update && sudo apt upgrade`.
+
+The web portal listens on port **6800**: `http://openastro.local:6800` from
+your LAN, or `http://172.24.1.1:6800` when joined to the hotspot.
 
 ## Build the image yourself
 
