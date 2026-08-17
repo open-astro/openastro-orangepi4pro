@@ -76,7 +76,7 @@ Hotspot clients reach the internet through whatever uplink the board has
 
 ## AlpacaBridge
 
-[AlpacaBridge](https://github.com/open-astro/AlpacaBridge) (3.4.0+, with the
+[AlpacaBridge](https://github.com/open-astro/AlpacaBridge) (3.5.0+, with the
 WiFi manager) is **preinstalled** from the OpenAstro apt repository, so the
 board works at a dark site straight from the flash - no internet required.
 When the board does have internet, it stays current with

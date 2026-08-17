@@ -311,7 +311,8 @@ rm -f /root/.not_logged_in_yet 2>/dev/null || true
 # AlpacaBridge (preinstalled - the whole point of the appliance;
 # a dark site has no internet to apt install from)
 # ============================================================
-# On by default since AlpacaBridge 3.4.0 shipped the WiFi manager
+# On by default since AlpacaBridge 3.4.0 shipped the WiFi manager (3.5.0
+# is current on apt.openastro.net; the latest version is always installed)
 # (hardware-validated on this board). Set INSTALL_ALPACABRIDGE=no to skip.
 INSTALL_ALPACABRIDGE="${INSTALL_ALPACABRIDGE:-yes}"
 if [ "$INSTALL_ALPACABRIDGE" = yes ]; then
