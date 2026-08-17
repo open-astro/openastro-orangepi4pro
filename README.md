@@ -61,6 +61,19 @@ WiFi. The access point starts automatically at every boot, so even if the
 board can't be reached over your network you can always join its hotspot and
 log in at `172.24.1.1`.
 
+### Hotspot band: 2.4 GHz by default, 5 GHz after setting a country
+
+The hotspot starts on the **2.4 GHz** band (channel 6) and stays there until
+you set a **regulatory country**. 5 GHz channels are restricted by the
+regulatory domain, and out of the box the board has none configured - so
+switching the hotspot to 5 GHz before setting a country will make it
+disappear for most devices. Set the country in the AlpacaBridge web portal's
+**WiFi card** (Server tab), and the hotspot can then be moved to 5 GHz and
+works normally.
+
+This only applies to the board's own hotspot: connecting the board to your
+home WiFi as a client works on **both 2.4 GHz and 5 GHz** regardless.
+
 ### Connect to your own network instead (optional)
 
 All networking is managed by NetworkManager. The hotspot runs on a dedicated
@@ -76,7 +89,7 @@ Hotspot clients reach the internet through whatever uplink the board has
 
 ## AlpacaBridge
 
-[AlpacaBridge](https://github.com/open-astro/AlpacaBridge) (3.5.0+, with the
+[AlpacaBridge](https://github.com/open-astro/AlpacaBridge) (3.5.1+, with the
 WiFi manager) is **preinstalled** from the OpenAstro apt repository, so the
 board works at a dark site straight from the flash - no internet required.
 When the board does have internet, it stays current with
